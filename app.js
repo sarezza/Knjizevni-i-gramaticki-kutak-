@@ -44,7 +44,7 @@
     else html+='<p class="muted">Detaljniju analizu dodaćemo nakon što pošalješ tekstove.</p>';
     const entry=(D.characters||[]).find(x=>x.work===w.id);
     if(entry)html+='<section class="analysis-section"><h3>Likovi</h3><div class="character-list">'+entry.list.map(p=>'<div class="character-item"><strong>'+e(p[0])+'</strong><span>'+e(p[1])+'</span></div>').join('')+'</div></section>';
-    if(w.sources?.length)html+='<div class="sources"><strong>Dodatni izvori: </strong>'+w.sources.map(url=>'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer">'+e(new URL(url).hostname)+'</a>').join(' · ')+'</div>';
+    if(w.sources?.length)html+='<div class="sources"><strong>Dodatni izvori: </strong>'+w.sources.map(url=>'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer">'+e(url.split('/')[2] || 'izvor')+'</a>').join(' · ')+'</div>';
     return html;
   }
   function renderCharacters(){
