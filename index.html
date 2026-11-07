@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f7f5ef" />
+  <meta name="description" content="Interaktivna biblioteka, pojmovnik i testovi iz srpskog jezika i književnosti za 4. razred gimnazije." />
+  <title>Književni kutak | Srpski jezik i književnost</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="./data.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Glavna navigacija">
+      <div class="brand"><div class="brand-mark">К</div><div><strong>Književni<br>kutak<span class="brand-dot">.</span></strong><span>Jezička i književna radionica</span></div></div>
+      <div class="side-label">UČENJE</div>
+      <nav class="navigation">
+        <button class="nav-link active" data-view="home"><span class="nav-ico">⌂</span> Početna <span class="nav-arrow">↗</span></button>
+        <button class="nav-link" data-view="works"><span class="nav-ico">▤</span> Književnost <span class="nav-arrow">↗</span></button>
+        <button class="nav-link" data-view="grammar"><span class="nav-ico">✎</span> Gramatika <span class="nav-arrow">↗</span></button>
+        <button class="nav-link" data-view="terms"><span class="nav-ico">◎</span> Pojmovnik <span class="nav-arrow">↗</span></button>
+        <button class="nav-link" data-view="quiz"><span class="nav-ico">◈</span> Vežbaj i proveri <span class="nav-arrow">↗</span></button>
+      </nav>
+      <div class="side-label side-label-later">MOJ PROSTOR</div>
+      <nav class="navigation"><button class="nav-link" data-view="progress"><span class="nav-ico">▥</span> Moj napredak <span class="nav-arrow">↗</span></button></nav>
+      <div class="side-spacer"></div>
+      <div class="sidebar-note"><span class="little-spark">✳</span><strong>Uči sa razumevanjem.</strong><p>Ne samo da zapamtiš odgovor — nego i zašto je tačan.</p></div>
+      <div class="side-foot">IV razred gimnazije <span>•</span> v1.0</div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuBtn" aria-label="Otvori meni" aria-expanded="false">☰</button>
+        <div class="breadcrumbs"><span>Srpski jezik i književnost</span> <b>/</b> <strong id="pageCrumb">Početna</strong></div>
+        <div class="top-actions"><span class="year-pill">✦ 4. razred</span><button class="icon-button" id="themeBtn" aria-label="Promeni temu" title="Promeni temu">☾</button></div>
+      </header>
+      <div id="screen" class="screen" aria-live="polite"></div>
+      <footer class="footer">Književni kutak · Tvoj prostor za učenje <span>Građa se dopunjuje prema materijalima iz škole.</span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
