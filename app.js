@@ -7,8 +7,8 @@
   const KEY = 'knjizevni_kutak_v1';
   function load(){try{return JSON.parse(localStorage.getItem(KEY)) || {}}catch{return {}}}
   const saved=load();
-  const state={view:'home',search:'',filter:'Svi',selectedWork:null,bookmarks:Array.isArray(saved.bookmarks)?saved.bookmarks:[],history:Array.isArray(saved.history)?saved.history:[],theme:saved.theme==='dark'?'dark':'light',quiz:null,setup:{category:'Sve oblasti',count:10}};
-  function persist(){try{localStorage.setItem(KEY,JSON.stringify({bookmarks:state.bookmarks,history:state.history,theme:state.theme}))}catch{}}
+  const state={view:'home',search:'',filter:'Svi',selectedWork:null,bookmarks:Array.isArray(saved.bookmarks)?saved.bookmarks:[],history:Array.isArray(saved.history)?saved.history:[],recentQuestions:Array.isArray(saved.recentQuestions)?saved.recentQuestions:[],theme:saved.theme==='dark'?'dark':'light',quiz:null,setup:{category:'Sve oblasti',count:10}};
+  function persist(){try{localStorage.setItem(KEY,JSON.stringify({bookmarks:state.bookmarks,history:state.history,recentQuestions:state.recentQuestions,theme:state.theme}))}catch{}}
   const e = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fold = v => String(v??'').toLowerCase().replace(/[абвгдђежзијклљмнопрстћуфхцчџш]/g,c=>({'а':'a','б':'b','в':'v','г':'g','д':'d','ђ':'dj','е':'e','ж':'z','з':'z','и':'i','ј':'j','к':'k','л':'l','љ':'lj','м':'m','н':'n','њ':'nj','о':'o','п':'p','р':'r','с':'s','т':'t','ћ':'c','у':'u','ф':'f','х':'h','ц':'c','ч':'c','џ':'dz','ш':'s'}[c]||c)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'dj');
   const shuffle = arr => {const a=[...arr];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -78,9 +78,27 @@
   }
   function startQuiz(category=state.setup.category){
     state.setup.category=category;
-    const pool=shuffle(D.questions.filter(q=>category==='Sve oblasti'||q.category===category));
+    const pool=D.questions.filter(q=>category==='Sve oblasti'||q.category===category);
     const amount=Math.min(state.setup.count,pool.length);
-    state.quiz={mode:'active',category,items:pool.slice(0,amount).map(q=>({...q,order:q.options?shuffle(q.options.map((_,i)=>i)):null,rightOrder:q.pairs?shuffle(q.pairs.map(p=>p[1])):null,selected:q.type==='matching'?{}:q.type==='multi'?[]:null,checked:false,correct:false})),index:0};
+    // Već viđena pitanja vraćaju se tek kada više nema dovoljno novih.
+    const recent=new Set(state.recentQuestions);
+    // U mešovitom testu smenjuj oblasti, umesto da dominira jedna oblast.
+    function distribute(items){
+      if(category!=='Sve oblasti')return shuffle(items);
+      const buckets=new Map();
+      for(const q of shuffle(items)){if(!buckets.has(q.category))buckets.set(q.category,[]);buckets.get(q.category).push(q)}
+      const categories=shuffle([...buckets.keys()]);
+      const ordered=[];
+      while(categories.some(c=>buckets.get(c).length)){
+        for(const c of categories){const next=buckets.get(c).pop();if(next)ordered.push(next)}
+      }
+      return ordered;
+    }
+    const ordered=[...distribute(pool.filter(q=>!recent.has(q.id))),...distribute(pool.filter(q=>recent.has(q.id)))];
+    const picked=ordered.slice(0,amount);
+    state.recentQuestions=[...state.recentQuestions,...picked.map(q=>q.id)].slice(-Math.min(100,Math.max(50,pool.length-amount)));
+    persist();
+    state.quiz={mode:'active',category,items:picked.map(q=>({...q,order:q.options?shuffle(q.options.map((_,i)=>i)):null,rightOrder:q.pairs?shuffle(q.pairs.map(p=>p[1])):null,selected:q.type==='matching'?{}:q.type==='multi'?[]:null,checked:false,correct:false})),index:0};
     render();window.scrollTo({top:0,behavior:'smooth'});
   }
   function chosen(q,i){return q.type==='multi'?q.selected.includes(i):q.selected===i}
