@@ -1025,8 +1025,9 @@
     }
   ]
 };
-for(const w of X.works){const i=D.works.findIndex(v=>v.id===w.id);if(i>=0)D.works[i]={...D.works[i],...w};else D.works.push(w)}
+const originalIds={hamlet:'w1',prokleta:'w2',naucite:'w3',probudim:'w4',rekvijem:'w5',treba:'w6',pismo:'w7',euridika:'w8'};
+for(const w of X.works){const id=originalIds[w.id]||w.id;const i=D.works.findIndex(v=>v.id===id);if(i>=0)D.works[i]={...D.works[i],...w,id};else D.works.push({...w,id})}
 for(const g of X.grammar){const i=D.grammar.findIndex(v=>v.id===g.id);if(i>=0)D.grammar[i]={...D.grammar[i],...g};else D.grammar.push(g)}
 for(const t of X.terms){if(!D.terms.some(v=>v.id===t.id))D.terms.push(t)}
-D.characters=X.characters;
+D.characters=X.characters.map(v=>({...v,work:originalIds[v.work]||v.work}));
 })();
