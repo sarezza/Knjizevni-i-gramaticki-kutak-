@@ -26,13 +26,13 @@ Interaktivan sajt za **srpski jezik i književnost, IV razred gimnazije**. Napra
 
 ## GitHub Pages: objavljivanje
 
-1. U root (osnovni nivo) repository-ja otpremi `index.html`, `style.css`, `data.js`, `app.js` (i po želji ovaj `README.md`).
+1. Fajlovi sajta su već postavljeni u root (osnovni nivo) repository-ja; nije potrebno ništa dodatno otpremati.
 2. U repository-ju otvori **Settings → Pages**.
 3. Pod **Build and deployment** izaberi **Deploy from a branch**.
 4. Branch: **main**, folder: **/(root)**, pa klikni **Save**.
 5. Kada GitHub završi objavljivanje, otvori link koji se pojavljuje u Pages podešavanjima.
 
-Na GitHub-u postoji i opcija **Add file → Upload files**: datoteke iz ZIP arhive prvo treba **raspakovati**, a zatim ih zajedno prevući na stranicu za otpremanje. Nemoj otpremati samo ZIP, jer GitHub Pages neće automatski prikazati njegov sadržaj.
+Sajt se automatski učitava iz datoteke `index.html` u osnovnom folderu repository-ja.
 
 ## Kako dodavati gradivo
 
