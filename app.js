@@ -3,7 +3,7 @@
   const D = window.KUTAK_DATA;
   const $ = sel => document.querySelector(sel);
   const root = $('#screen');
-  const viewNames = {home:'Početna',works:'Književnost',characters:'Likovi',grammar:'Gramatika',terms:'Pojmovnik',quiz:'Vežbaj i proveri',excerpts:'Prepoznaj odlomak',progress:'Moj napredak'};
+  const viewNames = {home:'Početna',works:'Književnost',notebook:'Beleške iz sveske',characters:'Likovi',grammar:'Gramatika',terms:'Pojmovnik',quiz:'Vežbaj i proveri',excerpts:'Prepoznaj odlomak',progress:'Moj napredak'};
   const KEY = 'knjizevni_kutak_v1';
   function load(){try{return JSON.parse(localStorage.getItem(KEY)) || {}}catch{return {}}}
   const saved=load();
@@ -30,7 +30,7 @@
     $('#themeBtn').textContent=state.theme==='dark'?'☀':'☾';
     $('#pageCrumb').textContent=viewNames[state.view];
     document.querySelectorAll('.nav-link').forEach(el=>el.classList.toggle('active',el.dataset.view===state.view));
-    root.innerHTML=({home:renderHome,works:renderWorks,characters:renderCharacters,grammar:renderGrammar,terms:renderTerms,quiz:renderQuiz,excerpts:renderExcerpts,progress:renderProgress}[state.view])();
+    root.innerHTML=({home:renderHome,works:renderWorks,notebook:renderNotebook,characters:renderCharacters,grammar:renderGrammar,terms:renderTerms,quiz:renderQuiz,excerpts:renderExcerpts,progress:renderProgress}[state.view])();
   }
   function renderHome(){
     const last=state.history[0];
@@ -45,12 +45,35 @@
       <div class="subtle-info">📌 <strong>Novo gradivo:</strong> beleške o delima, likovima i simbolima, uz zadatke iz pravopisa i gramatike.</div>`;
   }
   function filterWidget(groups,placeholder){return `<div class="filter-bar"><label class="searchbox"><span>⌕</span><input type="search" id="contentSearch" placeholder="${e(placeholder)}" value="${e(state.search)}" autocomplete="off" aria-label="Pretraga sadržaja"></label><div class="chips">${groups.map(n=>`<button class="chip ${state.filter===n?'active':''}" data-filter="${e(n)}">${e(n)}</button>`).join('')}</div></div>`}
+
+  function renderNotebookBody(n){
+    return '<div class="notebook-meta">✎ '+e(n.date)+' · Fotografije iz sveske: '+e(n.imagePages)+'</div>'
+      +n.sections.map(section=>'<section class="notebook-section"><h4>'+e(section.title)+'</h4><ul>'+section.points.map(p=>'<li>'+e(p)+'</li>').join('')+'</ul></section>').join('')
+      +(n.cautions?.length?'<details class="notebook-cautions"><summary>Napomene o nejasnim mestima i proveri podataka</summary><ul>'+n.cautions.map(x=>'<li>'+e(x)+'</li>').join('')+'</ul></details>':'');
+  }
+  function renderNotebookBlock(w){
+    return w.notebook?'<section class="notebook-block" aria-label="Beleške iz sveske"><div class="notebook-kicker">Iz tvog rukopisa</div><h3>Beleške iz sveske</h3><p class="notebook-intro">Uređen prepis školskih beležaka, odvojen od opšte analize dela. Pojedine formulacije sa fotografija su skraćene ili gramatički uređene.</p>'+renderNotebookBody(w.notebook)+'</section>':'';
+  }
+  function renderNotebook(){
+    const notes=(D.notebookNotes||[]).filter(n=>{
+      const w=D.works.find(x=>x.id===n.work);
+      return (state.filter==='Svi'||state.filter===n.title)
+        &&fold([n.title,w?.author,...n.sections.flatMap(s=>[s.title,...s.points])].join(' ')).includes(fold(state.search));
+    });
+    const names=['Svi',...(D.notebookNotes||[]).map(n=>n.title)];
+    return pageHeader('Tvoja školska građa','Beleške iz sveske','Uređen prepis fotografija iz sveske za IV razred. Prikazan je zasebno od analiza i testova.')
+      +filterWidget(names,'Pretraži beleške, pojmove ili pisce…')
+      +'<div class="countline">'+notes.length+' od '+(D.notebookNotes||[]).length+' dela sa beleškama</div>'
+      +(notes.length?'<div class="notebook-index">'+notes.map(n=>'<article class="notebook-block"><div class="notebook-kicker">Beleške iz sveske</div><h2>'+e(n.title)+'</h2><p class="muted">'+e(D.works.find(w=>w.id===n.work)?.author||'')+'</p>'+renderNotebookBody(n)+'</article>').join('')+'</div>':'<div class="empty-state">Nema beležaka za ovaj upit.</div>');
+  }
+
   function renderDeepWork(w){
     let html='';
     if(w.sections?.length){html+=w.sections.map(section=>'<section class="analysis-section"><h3>'+e(section.title)+'</h3><ul>'+section.points.map(p=>'<li>'+e(p)+'</li>').join('')+'</ul></section>').join('')}
     else html+='<p class="muted">Detaljniju analizu dodaćemo nakon što pošalješ tekstove.</p>';
     const entry=(D.characters||[]).find(x=>x.work===w.id);
     if(entry)html+='<section class="analysis-section"><h3>Likovi</h3><div class="character-list">'+entry.list.map(p=>'<div class="character-item"><strong>'+e(p[0])+'</strong><span>'+e(p[1])+'</span></div>').join('')+'</div></section>';
+    if(w.notebook)html+=renderNotebookBlock(w);
     if(w.sources?.length)html+='<div class="sources"><strong>Dodatni izvori: </strong>'+w.sources.map(url=>'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer">'+e(url.split('/')[2] || 'izvor')+'</a>').join(' · ')+'</div>';
     return html;
   }
@@ -61,8 +84,8 @@
   }
   function renderWorks(){
     const groups=['Svi','Lirika','Epika','Drama'];
-    const items=D.works.filter(w=>(state.filter==='Svi'||w.genre===state.filter)&&fold([w.title,w.author,w.genre,w.kind,...w.topics,...(w.sections||[]).flatMap(s=>[s.title,...s.points])].join(' ')).includes(fold(state.search)));
-    const cards=items.map(w=>`<article class="work-card"><div class="work-top"><div class="book-icon">${w.genre==='Drama'?'♜':w.genre==='Lirika'?'❦':'▤'}</div><button class="bookmark ${state.bookmarks.includes(w.id)?'saved':''}" data-bookmark="${e(w.id)}" title="Sačuvaj delo" aria-label="Sačuvaj delo" aria-pressed="${state.bookmarks.includes(w.id)}">${state.bookmarks.includes(w.id)?'★':'☆'}</button></div><h3>${e(w.title)}</h3><div class="byline">${e(w.author)}</div><p>${e(w.description)}</p><div class="tags">${tag(w.genre)}${tag(w.kind)}</div><div class="work-footer"><small class="muted">${e(w.period)}</small><button class="text-link" data-open-work="${e(w.id)}">Kartica dela ↗</button></div></article>`).join('');
+    const items=D.works.filter(w=>(state.filter==='Svi'||w.genre===state.filter)&&fold([w.title,w.author,w.genre,w.kind,...w.topics,...(w.sections||[]).flatMap(s=>[s.title,...s.points]),...(w.notebook?.sections||[]).flatMap(s=>[s.title,...s.points])].join(' ')).includes(fold(state.search)));
+    const cards=items.map(w=>`<article class="work-card"><div class="work-top"><div class="book-icon">${w.genre==='Drama'?'♜':w.genre==='Lirika'?'❦':'▤'}</div><button class="bookmark ${state.bookmarks.includes(w.id)?'saved':''}" data-bookmark="${e(w.id)}" title="Sačuvaj delo" aria-label="Sačuvaj delo" aria-pressed="${state.bookmarks.includes(w.id)}">${state.bookmarks.includes(w.id)?'★':'☆'}</button></div><h3>${e(w.title)}</h3><div class="byline">${e(w.author)}</div><p>${e(w.description)}</p><div class="tags">${tag(w.genre)}${tag(w.kind)}${w.notebook?tag("✎ Beleške iz sveske"):""}</div><div class="work-footer"><small class="muted">${e(w.period)}</small><button class="text-link" data-open-work="${e(w.id)}">Kartica dela ↗</button></div></article>`).join('');
     let selected='';
     if(state.selectedWork){const w=D.works.find(x=>x.id===state.selectedWork);if(w){selected=`<section class="detail" id="workDetail"><button class="text-link" data-close-work>← Nazad na pregled</button><div class="section-eyebrow" style="margin-top:22px">Kartica dela</div><h2>${e(w.title)}</h2><p class="muted">${e(w.author)}</p><div class="meta-grid"><div class="meta"><small>Književni rod</small><strong>${e(w.genre)}</strong></div><div class="meta"><small>Književna vrsta</small><strong>${e(w.kind)}</strong></div><div class="meta"><small>Razdoblje</small><strong>${e(w.period)}</strong></div></div><h3>O delu</h3><p class="muted">${e(w.description)}</p><h3>Tematski krugovi</h3><div class="tags">${w.topics.map(tag).join('')}</div>${renderDeepWork(w)}<button class="btn" data-quiz-category="Književnost">Vežbaj pitanja iz književnosti ↗</button></section>`}}
     return pageHeader('Biblioteka','Književnost','Dela četvrtog razreda: teme, simboli, poetika i detaljnije beleške. Otvori karticu dela.')+filterWidget(groups,'Pretraži dela, pisce, teme…')+`<div class="countline">Prikazano ${items.length} od ${D.works.length} dela</div>`+(items.length?`<div class="work-grid">${cards}</div>`:`<div class="empty-state"><strong>Nema rezultata</strong>Probaj drugi pojam ili filter.</div>`)+selected;
