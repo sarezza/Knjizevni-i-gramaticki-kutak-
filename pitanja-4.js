@@ -2080,5 +2080,7 @@ const Q=[
     "explain": "Калвинов роман је самосвестан и фрагментаран."
   }
 ];
+// Izbačen je zaseban engleski citat iz Hamleta; sada postoje duži prevodi na srpski u odlomcima.
+const oldQuoteIndex=Q.findIndex(q=>q.id==='iv4-136');if(oldQuoteIndex>=0)Q.splice(oldQuoteIndex,1);
 const existing=new Set(D.questions.map(q=>q.id));for(const q of Q){if(!existing.has(q.id)){D.questions.push(q);existing.add(q.id)}}
 })();
