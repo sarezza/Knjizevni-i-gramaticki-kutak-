@@ -3,16 +3,23 @@
   const D = window.KUTAK_DATA;
   const $ = sel => document.querySelector(sel);
   const root = $('#screen');
-  const viewNames = {home:'Početna',works:'Književnost',characters:'Likovi',grammar:'Gramatika',terms:'Pojmovnik',quiz:'Vežbaj i proveri',progress:'Moj napredak'};
+  const viewNames = {home:'Početna',works:'Književnost',characters:'Likovi',grammar:'Gramatika',terms:'Pojmovnik',quiz:'Vežbaj i proveri',excerpts:'Prepoznaj odlomak',progress:'Moj napredak'};
   const KEY = 'knjizevni_kutak_v1';
   function load(){try{return JSON.parse(localStorage.getItem(KEY)) || {}}catch{return {}}}
   const saved=load();
-  const state={view:'home',search:'',filter:'Svi',selectedWork:null,bookmarks:Array.isArray(saved.bookmarks)?saved.bookmarks:[],history:Array.isArray(saved.history)?saved.history:[],recentQuestions:Array.isArray(saved.recentQuestions)?saved.recentQuestions:[],theme:saved.theme==='dark'?'dark':'light',quiz:null,setup:{category:'Sve oblasti',count:10}};
+  const state={view:'home',search:'',filter:'Svi',selectedWork:null,bookmarks:Array.isArray(saved.bookmarks)?saved.bookmarks:[],history:Array.isArray(saved.history)?saved.history:[],recentQuestions:Array.isArray(saved.recentQuestions)?saved.recentQuestions:[],theme:saved.theme==='dark'?'dark':'light',quiz:null,setup:{category:'Sve oblasti',count:10,difficulty:'all',excerptType:'all'}};
   function persist(){try{localStorage.setItem(KEY,JSON.stringify({bookmarks:state.bookmarks,history:state.history,recentQuestions:state.recentQuestions,theme:state.theme}))}catch{}}
   const e = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fold = v => String(v??'').toLowerCase().replace(/[абвгдђежзијклљмнопрстћуфхцчџш]/g,c=>({'а':'a','б':'b','в':'v','г':'g','д':'d','ђ':'dj','е':'e','ж':'z','з':'z','и':'i','ј':'j','к':'k','л':'l','љ':'lj','м':'m','н':'n','њ':'nj','о':'o','п':'p','р':'r','с':'s','т':'t','ћ':'c','у':'u','ф':'f','х':'h','ц':'c','ч':'c','џ':'dz','ш':'s'}[c]||c)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'dj');
   const shuffle = arr => {const a=[...arr];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-  const count = category => D.questions.filter(q=>category==='Sve oblasti'||q.category===category).length;
+  const qLevel=q=>Number(q.difficulty)||(q.type==='matching'||q.type==='multi'?2:1);
+  function quizPool(category='Sve oblasti',difficulty='all',excerptsOnly=false,excerptType='all'){
+    return D.questions.filter(q=>(category==='Sve oblasti'||q.category===category)
+      &&(difficulty==='all'||qLevel(q)===Number(difficulty))
+      &&(!excerptsOnly||q.id.startsWith('odl-'))
+      &&(!excerptsOnly||excerptType==='all'||(excerptType==='original'?q.sourceType==='original':q.sourceType==='notes')));
+  }
+  const count = (category,difficulty='all') => quizPool(category,difficulty).length;
   const pageHeader = (eyebrow,title,desc) => `<div class="section-eyebrow">${e(eyebrow)}</div><h1 class="page-title">${e(title)}</h1><p class="page-desc">${e(desc)}</p>`;
   const tag = name => `<span class="tag">${e(name)}</span>`;
   let toastTimer;
@@ -23,7 +30,7 @@
     $('#themeBtn').textContent=state.theme==='dark'?'☀':'☾';
     $('#pageCrumb').textContent=viewNames[state.view];
     document.querySelectorAll('.nav-link').forEach(el=>el.classList.toggle('active',el.dataset.view===state.view));
-    root.innerHTML=({home:renderHome,works:renderWorks,characters:renderCharacters,grammar:renderGrammar,terms:renderTerms,quiz:renderQuiz,progress:renderProgress}[state.view])();
+    root.innerHTML=({home:renderHome,works:renderWorks,characters:renderCharacters,grammar:renderGrammar,terms:renderTerms,quiz:renderQuiz,excerpts:renderExcerpts,progress:renderProgress}[state.view])();
   }
   function renderHome(){
     const last=state.history[0];
@@ -32,7 +39,7 @@
     return `<section class="hero"><div class="hero-content"><div class="hero-eyebrow">✦ Tvoja digitalna čitaonica · IV razred</div><h1>Reči imaju <em>više slojeva.</em><br>Istraži ih.</h1><p>Književnost, gramatika i teorija na jednom mestu. Uči preko preglednih beležaka, poveži pojmove i proveri znanje kroz testove.</p><button class="btn btn-light" data-view="quiz">Započni vežbanje <span>↗</span></button></div></section>
       <div class="stats"><div class="stat"><strong>${D.works.length}</strong><span>dela u biblioteci</span></div><div class="stat"><strong>${D.terms.length}</strong><span>književna pojma</span></div><div class="stat"><strong>${D.questions.length}</strong><span>pitanje za vežbu</span></div><div class="stat"><strong>${state.history.length}</strong><span>urađenih testova</span></div></div>
       <div class="section-head"><h2>Šta danas učimo?</h2><button class="text-link" data-view="quiz">Otvori testove ↗</button></div>
-      <div class="tiles"><button class="tile" data-view="works"><span class="tile-icon">▤</span><h3>Književnost</h3><p>Dela, pisci, rodovi, vrste, teme i motivi.</p><small>Pogledaj biblioteku ↗</small></button><button class="tile" data-view="grammar"><span class="tile-icon">✎</span><h3>Gramatika</h3><p>Pravopis, sintaksa i kultura izražavanja.</p><small>Otvori lekcije ↗</small></button><button class="tile" data-view="terms"><span class="tile-icon">◎</span><h3>Pojmovnik</h3><p>Od soneta do intertekstualnosti i mimezisa.</p><small>Pročitaj pojmove ↗</small></button></div>
+      <div class="tiles"><button class="tile" data-view="works"><span class="tile-icon">▤</span><h3>Književnost</h3><p>Dela, pisci, rodovi, vrste, teme i motivi.</p><small>Pogledaj biblioteku ↗</small></button><button class="tile" data-view="grammar"><span class="tile-icon">✎</span><h3>Gramatika</h3><p>Pravopis, sintaksa i kultura izražavanja.</p><small>Otvori lekcije ↗</small></button><button class="tile" data-view="terms"><span class="tile-icon">◎</span><h3>Pojmovnik</h3><p>Od soneta do intertekstualnosti i mimezisa.</p><small>Pročitaj pojmove ↗</small></button><button class="tile" data-view="excerpts"><span class="tile-icon">❝</span><h3>Prepoznaj odlomak</h3><p>Izvorni citati i tragovi iz beležaka — tri nivoa težine.</p><small>Proveri prepoznavanje ↗</small></button></div>
       <div class="section-head"><h2>Za početak</h2><button class="text-link" data-view="progress">Moj napredak ↗</button></div>
       <div class="spotlight"><div class="note-card"><div class="overline">Pojam dana</div><h3>${e(term.name)}</h3><p>${e(term.definition)}</p><button class="text-link" data-view="terms">Otvori pojmovnik ↗</button></div><div class="note-card"><div class="overline">Tvoj sledeći korak</div><h3>${last?'Nastavi sa vežbanjem':'Prvi mali test?'}</h3><p>${last?`Poslednji rezultat: ${last.correct} od ${last.total} tačnih odgovora. Sledeći put možeš izabrati drugu oblast.`:'Izaberi oblast, broj pitanja i odmah proveri znanje. Odgovori se mešaju pri svakom novom testu.'}</p><button class="btn btn-outline btn-small" data-view="quiz">Vežbaj sada ↗</button></div></div>
       <div class="subtle-info">📌 <strong>Novo gradivo:</strong> beleške o delima, likovima i simbolima, uz zadatke iz pravopisa i gramatike.</div>`;
@@ -71,22 +78,41 @@
     return pageHeader('Pravila i primeri','Gramatika','Sintaksa, pravopis i jezička kultura — pregledne lekcije s primerima koje možeš odmah primeniti.')+filterWidget(groups,'Pretraži gramatičke lekcije…')+`<div class="countline">${list.length} gramatičkih oblasti</div>`+(list.length?`<div class="grammar-grid">${list.map(g=>`<article class="grammar-card">${tag(g.group)}<h3>${e(g.title)}</h3><p>${e(g.summary)}</p><div class="example">${e(g.example)}</div><details><summary>Pročitaj pravila i primere ↓</summary><ul>${g.notes.map(n=>`<li>${e(n)}</li>`).join('')}</ul></details></article>`).join('')}</div>`:'<div class="empty-state"><strong>Nema rezultata</strong>Promeni upit ili oblast.</div>')+`<div class="subtle-info">Sada su dostupne uvodne gramatičke lekcije. Kad pošalješ školsko gradivo za IV razred, sadržaj i zadatke prilagodićemo vašem programu.</div>`;
   }
   function renderQuiz(){return state.quiz?(state.quiz.mode==='result'?renderResult():renderQuestion()):renderSetup()}
+  function renderExcerpts(){return state.quiz?(state.quiz.mode==='result'?renderResult():renderQuestion()):renderExcerptSetup()}
+  function renderExcerptSetup(){
+    const lv=state.setup.difficulty,t=state.setup.excerptType;
+    const available=quizPool('Odlomci',lv,true,t).length;
+    const lvText={all:'Svi nivoi','1':'Lak','2':'Srednji','3':'Težak'};
+    const typeText={all:'Citati i tragovi',original:'Samo doslovni citati',notes:'Tragovi iz beležaka'};
+    return pageHeader('Posebna vežba','Prepoznaj odlomak','Prepoznaj pesmu ili prozno i dramsko delo po tekstu. Za neka dela imamo proverene originalne stihove; za ostala su tu opisni tragovi, jasno označeni kao beleške.')
+      +'<div class="quiz-setup excerpt-setup"><div class="overline">Poseban režim vežbanja</div><h2>Izaberi izazov</h2>'
+      +'<label class="control-label" for="excerptDifficulty">Nivo težine</label><select class="field" id="excerptDifficulty">'
+      +Object.entries(lvText).map(([key,label])=>'<option value="'+key+'" '+(lv===key?'selected':'')+'>'+label+'</option>').join('')+'</select>'
+      +'<div class="level-hints"><div><strong>Lak</strong><span>Prepoznatljivi odlomci i motivi</span></div><div><strong>Srednji</strong><span>Manje očigledni delovi teksta</span></div><div><strong>Težak</strong><span>Suptilne slike i detalji</span></div></div>'
+      +'<label class="control-label" for="excerptType">Vrsta materijala</label><select class="field" id="excerptType">'
+      +Object.entries(typeText).map(([key,label])=>'<option value="'+key+'" '+(t===key?'selected':'')+'>'+label+'</option>').join('')+'</select>'
+      +'<label class="control-label" for="excerptCount">Broj pitanja</label><select class="field" id="excerptCount">'
+      +[5,10,1000].map(n=>'<option value="'+n+'" '+(state.setup.count===n?'selected':'')+'>'+(n===1000?'Sva dostupna pitanja':n+' pitanja')+'</option>').join('')+'</select>'
+      +'<div class="quiz-notice">Dostupno '+available+' zadataka sa izabranim podešavanjima. Redosled dela i ponuđenih odgovora se meša.</div>'
+      +'<button class="btn" data-start-excerpt '+(available===0?'disabled':'')+'>Pokreni prepoznavanje ↗</button></div>'
+      +'<div class="subtle-info"><strong>Važno:</strong> „Doslovni citat“ označava proverene originalne reči; „trag iz beležaka“ je prepričan motiv ili opis, ne stih iz dela. Odlomci Šekspira i Getea prikazani su na izvornim jezicima. Možeš poslati tekstove iz čitanke da dopunimo pitanja domaćim prevodima i drugim pesmama.</div>';
+  }
   function renderSetup(){
     const categories=['Sve oblasti',...new Set(D.questions.map(q=>q.category))];
-    const available=count(state.setup.category);
-    return pageHeader('Proveri znanje','Interaktivni testovi','Poveži dela i pisce, prepoznaj pojmove, odgovori na pitanja iz gramatike i vežbaj odlomke. Ponuđeni odgovori se mešaju pri svakom testu.')+`<div class="quiz-setup"><div class="overline">Podesi svoj test</div><h2>Odakle počinjemo?</h2><label class="control-label" for="quizCategory">Izaberi oblast</label><select class="field" id="quizCategory">${categories.map(c=>`<option ${state.setup.category===c?'selected':''} value="${e(c)}">${e(c)} (${count(c)})</option>`).join('')}</select><label class="control-label" for="quizCount">Broj pitanja</label><select class="field" id="quizCount">${[5,10,20,1000].map(n=>`<option value="${n}" ${state.setup.count===n?'selected':''}>${n===1000?'Sva dostupna pitanja':n+' pitanja'}</option>`).join('')}</select><div class="quiz-notice">✳ Dostupno ${available} pitanja u odabranoj oblasti. Test će prikazati najviše taj broj. Rezultati se čuvaju samo u ovom pregledaču, na tvom uređaju.</div><button class="btn" data-start-quiz ${available===0?'disabled':''}>Pokreni test ↗</button></div><div class="subtle-info">Za prepoznavanje odlomaka trenutno se koriste samo kratki provereni citati. Pošalji tekstove iz čitanke da dodamo još.</div>`;
+    const available=count(state.setup.category,state.setup.difficulty);
+    return pageHeader('Proveri znanje','Interaktivni testovi','Poveži dela i pisce, prepoznaj pojmove, odgovori na pitanja iz gramatike i vežbaj odlomke. Ponuđeni odgovori se mešaju pri svakom testu.')+`<div class="quiz-setup"><div class="overline">Podesi svoj test</div><h2>Odakle počinjemo?</h2><label class="control-label" for="quizCategory">Izaberi oblast</label><select class="field" id="quizCategory">${categories.map(c=>`<option ${state.setup.category===c?'selected':''} value="${e(c)}">${e(c)} (${count(c,state.setup.difficulty)})</option>`).join('')}</select><label class="control-label" for="quizDifficulty">Težina</label><select class="field" id="quizDifficulty">${[['all','Sve težine'],['1','Lak'],['2','Srednji'],['3','Težak']].map(([v,label])=>`<option value="${v}" ${state.setup.difficulty===v?'selected':''}>${label}</option>`).join('')}</select><label class="control-label" for="quizCount">Broj pitanja</label><select class="field" id="quizCount">${[5,10,20,1000].map(n=>`<option value="${n}" ${state.setup.count===n?'selected':''}>${n===1000?'Sva dostupna pitanja':n+' pitanja'}</option>`).join('')}</select><div class="quiz-notice">✳ Dostupno ${available} pitanja u odabranoj oblasti. Test će prikazati najviše taj broj. Rezultati se čuvaju samo u ovom pregledaču, na tvom uređaju.</div><button class="btn" data-start-quiz ${available===0?'disabled':''}>Pokreni test ↗</button></div><div class="subtle-info">Za prepoznavanje odlomaka trenutno se koriste samo kratki provereni citati. Pošalji tekstove iz čitanke da dodamo još.</div>`;
   }
-  function startQuiz(category=state.setup.category){
+  function startQuiz(category=state.setup.category,excerptsOnly=false){
     state.setup.category=category;
-    const pool=D.questions.filter(q=>category==='Sve oblasti'||q.category===category);
+    const pool=quizPool(category,state.setup.difficulty,excerptsOnly,state.setup.excerptType);
     const amount=Math.min(state.setup.count,pool.length);
     // Već viđena pitanja vraćaju se tek kada više nema dovoljno novih.
     const recent=new Set(state.recentQuestions);
     // U mešovitom testu smenjuj oblasti, umesto da dominira jedna oblast.
     function distribute(items){
-      if(category!=='Sve oblasti')return shuffle(items);
+      if(category!=='Sve oblasti'&&!excerptsOnly)return shuffle(items);
       const buckets=new Map();
-      for(const q of shuffle(items)){if(!buckets.has(q.category))buckets.set(q.category,[]);buckets.get(q.category).push(q)}
+      for(const q of shuffle(items)){const key=excerptsOnly?(q.work||q.id):q.category;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(q)}
       const categories=shuffle([...buckets.keys()]);
       const ordered=[];
       while(categories.some(c=>buckets.get(c).length)){
@@ -98,7 +124,7 @@
     const picked=ordered.slice(0,amount);
     state.recentQuestions=[...state.recentQuestions,...picked.map(q=>q.id)].slice(-Math.min(100,Math.max(50,pool.length-amount)));
     persist();
-    state.quiz={mode:'active',category,items:picked.map(q=>({...q,order:q.options?shuffle(q.options.map((_,i)=>i)):null,rightOrder:q.pairs?shuffle(q.pairs.map(p=>p[1])):null,selected:q.type==='matching'?{}:q.type==='multi'?[]:null,checked:false,correct:false})),index:0};
+    state.quiz={mode:'active',category,excerptsOnly,items:picked.map(q=>({...q,order:q.options?shuffle(q.options.map((_,i)=>i)):null,rightOrder:q.pairs?shuffle(q.pairs.map(p=>p[1])):null,selected:q.type==='matching'?{}:q.type==='multi'?[]:null,checked:false,correct:false})),index:0};
     render();window.scrollTo({top:0,behavior:'smooth'});
   }
   function chosen(q,i){return q.type==='multi'?q.selected.includes(i):q.selected===i}
@@ -114,9 +140,9 @@
     let feedback='';
     if(q.checked){
       const answer=q.type==='matching'?q.pairs.map(p=>p[0]+' — '+p[1]).join(' · '):q.type==='multi'?q.answers.map(i=>q.options[i]).join(', '):q.options[q.answer];
-      feedback=`<div class="feedback ${q.correct?'':'incorrect'}"><strong>${q.correct?'✓ Tačno!':'✕ Nije sasvim tačno.'}</strong><p><b>Tačan odgovor:</b> ${e(answer)}</p><p>${e(q.explain)}</p></div>`;
+      feedback=`<div class="feedback ${q.correct?'':'incorrect'}"><strong>${q.correct?'✓ Tačno!':'✕ Nije sasvim tačno.'}</strong><p><b>Tačan odgovor:</b> ${e(answer)}</p><p>${e(q.explain)}</p>${q.source?`<p class="quote-source">Poreklo materijala: ${e(q.source)}${q.sourceUrl?` · <a href="${e(q.sourceUrl)}" target="_blank" rel="noopener noreferrer">Izvorni tekst</a>`:''}</p>`:''}</div>`;
     }
-    return `<div class="quiz-wrap"><div class="quiz-progress"><span>${e(quiz.category)} · Pitanje ${num} / ${total}</span><span>${Math.round((num-1)/total*100)}% završeno</span></div><div class="progress-track"><div class="progress-fill" style="width:${(num-1)/total*100}%"></div></div><div class="question-card"><div class="question-kicker">${e(q.category)} · ${q.type==='matching'?'Povezivanje':q.type==='multi'?'Više tačnih odgovora':q.type==='quote'?'Prepoznaj odlomak':'Izaberi jedan odgovor'}</div><h2>${e(q.prompt)}</h2>${q.quote?`<blockquote class="quote">${e(q.quote)}</blockquote>`:''}${answers}<div class="question-hint">${q.type==='matching'?'Poveži svaki pojam sa odgovarajućim objašnjenjem.':q.type==='multi'?'Možeš označiti više odgovora.':'Označi odgovor pa proveri.'}</div>${feedback}</div><div class="quiz-actions"><button class="btn btn-outline" data-quit-quiz>← Izađi iz testa</button>${q.checked?`<button class="btn" data-next-question>${num===total?'Završi test →':'Sledeće pitanje →'}</button>`:`<button class="btn" data-check-question ${isReady(q)?'':'disabled'}>Proveri odgovor ✓</button>`}</div></div>`;
+    return `<div class="quiz-wrap"><div class="quiz-progress"><span>${e(quiz.category)} · Pitanje ${num} / ${total}</span><span>${Math.round((num-1)/total*100)}% završeno</span></div><div class="progress-track"><div class="progress-fill" style="width:${(num-1)/total*100}%"></div></div><div class="question-card"><div class="question-kicker">${e(q.category)} · Nivo: ${qLevel(q)===1?'lak':qLevel(q)===2?'srednji':'težak'} · ${q.type==='matching'?'Povezivanje':q.type==='multi'?'Više tačnih odgovora':q.type==='quote'?'Prepoznaj odlomak':'Izaberi jedan odgovor'}</div><h2>${e(q.prompt)}</h2>${q.quote?`<div class="quote-label">${q.sourceType==='notes'?'Trag iz beležaka (nije citat)':q.sourceType==='original'?'Doslovni citat':'Kratak odlomak'}</div><blockquote class="quote ${q.sourceType==='notes'?'quote-note':''}">${e(q.quote)}</blockquote>`:''}${answers}<div class="question-hint">${q.type==='matching'?'Poveži svaki pojam sa odgovarajućim objašnjenjem.':q.type==='multi'?'Možeš označiti više odgovora.':'Označi odgovor pa proveri.'}</div>${feedback}</div><div class="quiz-actions"><button class="btn btn-outline" data-quit-quiz>← Izađi iz testa</button>${q.checked?`<button class="btn" data-next-question>${num===total?'Završi test →':'Sledeće pitanje →'}</button>`:`<button class="btn" data-check-question ${isReady(q)?'':'disabled'}>Proveri odgovor ✓</button>`}</div></div>`;
   }
   function checkQuestion(){const q=state.quiz.items[state.quiz.index];if(q.checked||!isReady(q))return;
     q.correct=q.type==='matching'?q.pairs.every((p,i)=>q.selected[i]===p[1]):q.type==='multi'?q.selected.length===q.answers.length&&q.answers.every(n=>q.selected.includes(n)):q.selected===q.answer;
@@ -145,15 +171,16 @@
     if(el.hasAttribute('data-close-work')){state.selectedWork=null;render();return}
     if(el.dataset.quizCategory){state.view='quiz';state.setup.category=el.dataset.quizCategory;state.quiz=null;render();window.scrollTo({top:0,behavior:'smooth'});return}
     if(el.hasAttribute('data-start-quiz')){startQuiz();return}
+    if(el.hasAttribute('data-start-excerpt')){startQuiz('Odlomci',true);return}
     if(el.hasAttribute('data-choice')){const q=state.quiz?.items[state.quiz.index];if(!q||q.checked)return;const n=Number(el.dataset.choice);if(q.type==='multi'){q.selected=q.selected.includes(n)?q.selected.filter(x=>x!==n):[...q.selected,n]}else{q.selected=n}render();return}
     if(el.hasAttribute('data-check-question')){checkQuestion();return}
     if(el.hasAttribute('data-next-question')){nextQuestion();return}
     if(el.hasAttribute('data-quit-quiz')){state.quiz=null;render();return}
-    if(el.hasAttribute('data-retry-quiz')){startQuiz();return}
+    if(el.hasAttribute('data-retry-quiz')){startQuiz(state.quiz?.category,state.view==='excerpts');return}
     if(el.hasAttribute('data-reset-history')){if(window.confirm('Da li želiš da obrišeš istoriju testova?')){state.history=[];persist();render();toast('Istorija testova je obrisana.')}return}
   });
   root.addEventListener('change',ev=>{
-    const el=ev.target;if(el.id==='quizCategory'){state.setup.category=el.value;render()}else if(el.id==='quizCount'){state.setup.count=Number(el.value)}else if(el.hasAttribute('data-match-row')){const q=state.quiz?.items[state.quiz.index];if(q&&!q.checked){q.selected[Number(el.dataset.matchRow)]=el.value;const b=$('[data-check-question]');if(b)b.disabled=!isReady(q)}}
+    const el=ev.target;if(el.id==='quizCategory'){state.setup.category=el.value;render()}else if(el.id==='quizDifficulty'||el.id==='excerptDifficulty'){state.setup.difficulty=el.value;render()}else if(el.id==='excerptType'){state.setup.excerptType=el.value;render()}else if(el.id==='quizCount'||el.id==='excerptCount'){state.setup.count=Number(el.value)}else if(el.hasAttribute('data-match-row')){const q=state.quiz?.items[state.quiz.index];if(q&&!q.checked){q.selected[Number(el.dataset.matchRow)]=el.value;const b=$('[data-check-question]');if(b)b.disabled=!isReady(q)}}
   });
   root.addEventListener('input',ev=>{
     if(ev.target.id==='contentSearch'){const cursor=ev.target.selectionStart;state.search=ev.target.value;render();const newInput=$('#contentSearch');if(newInput){newInput.focus();try{newInput.setSelectionRange(cursor,cursor)}catch{}}}
