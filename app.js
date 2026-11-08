@@ -3,7 +3,7 @@
   const D = window.KUTAK_DATA;
   const $ = sel => document.querySelector(sel);
   const root = $('#screen');
-  const viewNames = {home:'Početna',works:'Književnost',notebook:'Beleške iz sveske',characters:'Likovi',grammar:'Gramatika',terms:'Pojmovnik',quiz:'Vežbaj i proveri',excerpts:'Prepoznaj odlomak',progress:'Moj napredak'};
+  const viewNames = {home:'Početna',works:'Književnost',notebook:'Beleške iz sveske',cases:'Sintaksa padeža',characters:'Likovi',grammar:'Gramatika',terms:'Pojmovnik',quiz:'Vežbaj i proveri',excerpts:'Prepoznaj odlomak',progress:'Moj napredak'};
   const KEY = 'knjizevni_kutak_v1';
   function load(){try{return JSON.parse(localStorage.getItem(KEY)) || {}}catch{return {}}}
   const saved=load();
@@ -30,7 +30,7 @@
     $('#themeBtn').textContent=state.theme==='dark'?'☀':'☾';
     $('#pageCrumb').textContent=viewNames[state.view];
     document.querySelectorAll('.nav-link').forEach(el=>el.classList.toggle('active',el.dataset.view===state.view));
-    root.innerHTML=({home:renderHome,works:renderWorks,notebook:renderNotebook,characters:renderCharacters,grammar:renderGrammar,terms:renderTerms,quiz:renderQuiz,excerpts:renderExcerpts,progress:renderProgress}[state.view])();
+    root.innerHTML=({home:renderHome,works:renderWorks,notebook:renderNotebook,cases:renderCaseTextbook,characters:renderCharacters,grammar:renderGrammar,terms:renderTerms,quiz:renderQuiz,excerpts:renderExcerpts,progress:renderProgress}[state.view])();
   }
   function renderHome(){
     const last=state.history[0];
@@ -95,10 +95,33 @@
     const list=D.terms.filter(t=>(state.filter==='Svi'||t.group===state.filter)&&fold([t.name,t.definition,t.example,t.group].join(' ')).includes(fold(state.search)));
     return pageHeader('Rečnik teorije','Pojmovnik','Kratko i razumljivo objašnjenje književnih termina. Klikni na karticu za definiciju, primer i dodatni kontekst.')+filterWidget(groups,'Pretraži termin ili objašnjenje…')+`<div class="countline">${list.length} pojmova</div>`+(list.length?`<div class="term-grid">${list.map(t=>`<details class="term-card"><summary><span><small>${e(t.group)}</small><span class="term-name">${e(t.name)}</span></span></summary><div class="term-body">${e(t.definition)}${t.example?`<p class="term-example">${e(t.example)}</p>`:''}</div></details>`).join('')}</div>`:'<div class="empty-state"><strong>Nema pojmova</strong>Promeni filter ili reč za pretragu.</div>')+`<div class="subtle-info">✦ Pojmovnik je početna verzija. Proširivaćemo ga terminima iz tvojih lekcija i profesorkinih beležaka.</div>`;
   }
+
+  function renderCaseTextbook(){
+    const tx=D.caseTextbook;
+    if(!tx)return pageHeader('Udžbenik','Sintaksa padeža','Gradivo nije učitano.');
+    const groups=['Svi',...tx.sections.map(s=>s.title)];
+    const filtered=tx.sections.filter(sec=>(state.filter==='Svi'||sec.title===state.filter)
+      &&fold([sec.title,sec.summary,...sec.points].join(' ')).includes(fold(state.search)));
+    const exampleRows=tx.examples.filter(ex=>fold(ex.join(' ')).includes(fold(state.search)));
+    const all=state.filter==='Svi';
+    const categories=['Падежи: препознавање','Падежи: значење и функција','Падежна синонимија','Падежи: напредно'];
+    const titles=['Препознавање падежа','Значење и функција','Падежна синонимија','Напредни задаци'];
+    return pageHeader('Уџбеник · стр. 322–334','Синтакса падежа','Седам падежа, њихова значења, синтаксичке службе, предлози, падежна синонимија и поливалентност. Препричано и организовано према фотографисаним страницама.')
+      +'<div class="case-intro"><strong>Како анализирати израз?</strong><p>1. Падеж: облик речи и предлог. 2. Значење: шта израз означава. 3. Функција: коју службу има у реченици.</p><div class="case-triple">Пример: „моје баке“ → <b>генитив</b> · <b>припадност</b> · <b>атрибут</b></div></div>'
+      +'<div class="section-head"><h2>Учи по областима</h2></div>'
+      +filterWidget(groups,'Пронађи значење, падеж или функцију…')
+      +'<div class="case-chapters">'+filtered.map((sec,i)=>'<details class="case-chapter" '+(state.filter!=='Svi'||(filtered.length===1)||(!state.search&&i===0)?'open':'')+'><summary>'+e(sec.title)+'<span class="case-chapter-count">'+sec.points.length+' објашњења</span></summary><p class="case-summary">'+e(sec.summary)+'</p><ul>'+sec.points.map(point=>'<li>'+e(point)+'</li>').join('')+'</ul></details>').join('')+'</div>'
+      +(filtered.length?'':'<div class="empty-state">За овај појам нема резултата. Покушај другу реч.</div>')
+      +'<details class="case-examples"><summary>Разрађени примери: падеж + значење + функција ('+exampleRows.length+')</summary>'
+      +(exampleRows.length?'<div class="case-table-wrap"><table class="case-table"><thead><tr><th>Пример и израз</th><th>Падеж</th><th>Значење</th><th>Функција</th></tr></thead><tbody>'+exampleRows.map(ex=>'<tr><td><span>'+e(ex[0])+'</span><strong>'+e(ex[1])+'</strong></td><td>'+e(ex[2])+'</td><td>'+e(ex[3])+'</td><td>'+e(ex[4])+'</td></tr>').join('')+'</tbody></table></div>':'<p>Нема примера за претрагу.</p>')+'</details>'
+      +'<div class="section-head"><h2>Провери разумевање</h2></div><div class="case-tests">'+categories.map((cat,i)=>'<button class="case-test-button" data-quiz-category="'+e(cat)+'"><span>'+e(titles[i])+'</span><small>'+count(cat,'all')+' различитих питања ↗</small></button>').join('')+'</div>'
+      +'<p class="case-source">Извор: фотографисане странице 322–334, поглавље „Синтакса падежа“. Ово је прерађена лекција са ауторским примерима, не дослован пренос целог текста уџбеника.</p>';
+  }
+
   function renderGrammar(){
     const groups=['Svi',...new Set(D.grammar.map(g=>g.group))];
     const list=D.grammar.filter(g=>(state.filter==='Svi'||g.group===state.filter)&&fold([g.title,g.summary,g.group,g.example,...g.notes].join(' ')).includes(fold(state.search)));
-    return pageHeader('Pravila i primeri','Gramatika','Sintaksa, pravopis i jezička kultura — pregledne lekcije s primerima koje možeš odmah primeniti.')+filterWidget(groups,'Pretraži gramatičke lekcije…')+`<div class="countline">${list.length} gramatičkih oblasti</div>`+(list.length?`<div class="grammar-grid">${list.map(g=>`<article class="grammar-card">${tag(g.group)}<h3>${e(g.title)}</h3><p>${e(g.summary)}</p><div class="example">${e(g.example)}</div><details><summary>Pročitaj pravila i primere ↓</summary><ul>${g.notes.map(n=>`<li>${e(n)}</li>`).join('')}</ul></details></article>`).join('')}</div>`:'<div class="empty-state"><strong>Nema rezultata</strong>Promeni upit ili oblast.</div>')+`<div class="subtle-info">Sada su dostupne uvodne gramatičke lekcije. Kad pošalješ školsko gradivo za IV razred, sadržaj i zadatke prilagodićemo vašem programu.</div>`;
+    return pageHeader('Pravila i primeri','Gramatika','Sintaksa, pravopis i jezička kultura — pregledne lekcije s primerima koje možeš odmah primeniti.')+filterWidget(groups,'Pretraži gramatičke lekcije…')+`<div class="countline">${list.length} gramatičkih oblasti</div>`+(list.length?`<div class="grammar-grid">${list.map(g=>`<article class="grammar-card">${tag(g.group)}<h3>${e(g.title)}</h3><p>${e(g.summary)}</p><div class="example">${e(g.example)}</div>${g.id==="g-padezi-udzbenik"?'<button class="btn btn-small" data-view="cases">Отвори комплетну лекцију о падежима ↗</button>':""}<details><summary>Pročitaj pravila i primere ↓</summary><ul>${g.notes.map(n=>`<li>${e(n)}</li>`).join('')}</ul></details></article>`).join('')}</div>`:'<div class="empty-state"><strong>Nema rezultata</strong>Promeni upit ili oblast.</div>')+`<div class="subtle-info">Ново: детаљна синтакса падежа из уџбеника (стр. 322–334) са примерима и посебним тестовима. Остале лекције допуњавамо по материјалу.</div>`;
   }
   function renderQuiz(){return state.quiz?(state.quiz.mode==='result'?renderResult():renderQuestion()):renderSetup()}
   function renderExcerpts(){return state.quiz?(state.quiz.mode==='result'?renderResult():renderQuestion()):renderExcerptSetup()}
@@ -123,7 +146,7 @@
   function renderSetup(){
     const categories=['Sve oblasti',...new Set(D.questions.map(q=>q.category))];
     const available=count(state.setup.category,state.setup.difficulty);
-    return pageHeader('Proveri znanje','Interaktivni testovi','Poveži dela i pisce, prepoznaj pojmove, odgovori na pitanja iz gramatike i vežbaj odlomke. Ponuđeni odgovori se mešaju pri svakom testu.')+`<div class="quiz-setup"><div class="overline">Podesi svoj test</div><h2>Odakle počinjemo?</h2><label class="control-label" for="quizCategory">Izaberi oblast</label><select class="field" id="quizCategory">${categories.map(c=>`<option ${state.setup.category===c?'selected':''} value="${e(c)}">${e(c)} (${count(c,state.setup.difficulty)})</option>`).join('')}</select><label class="control-label" for="quizDifficulty">Težina</label><select class="field" id="quizDifficulty">${[['all','Sve težine'],['1','Lak'],['2','Srednji'],['3','Težak']].map(([v,label])=>`<option value="${v}" ${state.setup.difficulty===v?'selected':''}>${label}</option>`).join('')}</select><label class="control-label" for="quizCount">Broj pitanja</label><select class="field" id="quizCount">${[5,10,20,1000].map(n=>`<option value="${n}" ${state.setup.count===n?'selected':''}>${n===1000?'Sva dostupna pitanja':n+' pitanja'}</option>`).join('')}</select><div class="quiz-notice">✳ Dostupno ${available} pitanja u odabranoj oblasti. Test će prikazati najviše taj broj. Rezultati se čuvaju samo u ovom pregledaču, na tvom uređaju.</div><button class="btn" data-start-quiz ${available===0?'disabled':''}>Pokreni test ↗</button></div><div class="subtle-info">Za prepoznavanje odlomaka trenutno se koriste samo kratki provereni citati. Pošalji tekstove iz čitanke da dodamo još.</div>`;
+    return pageHeader('Proveri znanje','Interaktivni testovi','Poveži dela i pisce, prepoznaj pojmove, odgovori na pitanja iz gramatike i vežbaj odlomke. Ponuđeni odgovori se mešaju pri svakom testu.')+`<div class="quiz-setup"><div class="overline">Podesi svoj test</div><h2>Odakle počinjemo?</h2><label class="control-label" for="quizCategory">Izaberi oblast</label><select class="field" id="quizCategory">${categories.map(c=>`<option ${state.setup.category===c?'selected':''} value="${e(c)}">${e(c)} (${count(c,state.setup.difficulty)})</option>`).join('')}</select><label class="control-label" for="quizDifficulty">Težina</label><select class="field" id="quizDifficulty">${[['all','Sve težine'],['1','Lak'],['2','Srednji'],['3','Težak']].map(([v,label])=>`<option value="${v}" ${state.setup.difficulty===v?'selected':''}>${label}</option>`).join('')}</select><label class="control-label" for="quizCount">Broj pitanja</label><select class="field" id="quizCount">${[5,10,20,1000].map(n=>`<option value="${n}" ${state.setup.count===n?'selected':''}>${n===1000?'Sva dostupna pitanja':n+' pitanja'}</option>`).join('')}</select><div class="quiz-notice">✳ Dostupno ${available} pitanja u odabranoj oblasti. Test će prikazati najviše taj broj. Rezultati se čuvaju samo u ovom pregledaču, na tvom uređaju.</div><button class="btn" data-start-quiz ${available===0?'disabled':''}>Pokreni test ↗</button></div><div class="subtle-info">Изабери област и тежину; понуђени одговори се мешају. За синтаксу падежа доступни су посебни тестови по врстама задатака.</div>`;
   }
   function startQuiz(category=state.setup.category,excerptsOnly=false){
     state.setup.category=category;
