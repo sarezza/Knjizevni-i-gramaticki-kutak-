@@ -215,7 +215,7 @@
     if(el.dataset.bookmark){const id=el.dataset.bookmark;state.bookmarks=state.bookmarks.includes(id)?state.bookmarks.filter(x=>x!==id):[...state.bookmarks,id];persist();render();toast(state.bookmarks.includes(id)?'Delo je sačuvano.':'Delo je uklonjeno iz sačuvanih.');return}
     if(el.dataset.openWork){state.selectedWork=el.dataset.openWork;render();setTimeout(()=>$('#workDetail')?.scrollIntoView({behavior:'smooth',block:'start'}),30);return}
     if(el.hasAttribute('data-close-work')){state.selectedWork=null;render();return}
-    if(el.dataset.quizCategory){state.view='quiz';state.setup.category=el.dataset.quizCategory;state.quiz=null;render();window.scrollTo({top:0,behavior:'smooth'});return}
+    if(el.dataset.quizCategory){state.view='quiz';state.setup.category=el.dataset.quizCategory;state.setup.difficulty='all';state.setup.count=10;state.quiz=null;render();window.scrollTo({top:0,behavior:'smooth'});return}
     if(el.hasAttribute('data-start-quiz')){startQuiz();return}
     if(el.hasAttribute('data-start-excerpt')){startQuiz('Odlomci',true);return}
     if(el.hasAttribute('data-choice')){const q=state.quiz?.items[state.quiz.index];if(!q||q.checked)return;const n=Number(el.dataset.choice);if(q.type==='multi'){q.selected=q.selected.includes(n)?q.selected.filter(x=>x!==n):[...q.selected,n]}else{q.selected=n}render();return}
