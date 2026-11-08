@@ -59,3 +59,38 @@ html[data-theme="dark"]{--paper:#1c211d;--card:#242b25;--sidebar:#202720;--ink:#
 .notebook-cautions ul{padding-left:20px;font-size:13px;line-height:1.65}
 .notebook-cautions li{margin:10px 0}
 @media(max-width:620px){.notebook-block{padding:18px 16px}.notebook-section li{font-size:13px}.notebook-block h2{font-size:24px}}
+
+
+/* Udžbenik: pregledna sintaksa padeža i razrađeni primeri */
+.case-intro{border:1px solid var(--line);border-radius:15px;padding:19px 22px;margin:23px 0;background:var(--card)}
+.case-intro strong{font-size:16px;color:var(--ink)}
+.case-intro p{color:var(--soft);line-height:1.7;font-size:14px;margin:9px 0}
+.case-triple{padding:13px 15px;background:var(--chip);border-radius:10px;line-height:1.7;font-size:14px;color:var(--ink)}
+.case-chapters{display:grid;gap:11px}
+.case-chapter{border:1px solid var(--line);border-radius:13px;background:var(--card);overflow:hidden}
+.case-chapter summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;justify-content:space-between;font-size:16px;font-weight:700;padding:18px 20px;line-height:1.45;color:var(--ink)}
+.case-chapter summary::-webkit-details-marker{display:none}
+.case-chapter summary::before{content:"＋";color:var(--accent-dark);font-size:18px}
+.case-chapter[open] summary::before{content:"−"}
+.case-chapter summary:hover{background:var(--chip)}
+.case-chapter-count{font-size:11px;flex:none;color:var(--soft);font-weight:500}
+.case-chapter[open] summary{border-bottom:1px solid var(--line)}
+.case-summary{font-size:14px;color:var(--soft);padding:0 21px;line-height:1.65}
+.case-chapter ul{padding:0 24px 12px 43px;margin:12px 0}
+.case-chapter li{font-size:14px;line-height:1.75;color:var(--ink);margin:12px 0}
+.case-examples{margin:24px 0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.case-examples summary{font-weight:700;cursor:pointer;color:var(--ink)}
+.case-table-wrap{overflow-x:auto;max-width:100%;margin:17px 0 0}
+.case-table{width:100%;border-collapse:collapse;min-width:680px;font-size:13px}
+.case-table th,.case-table td{padding:13px 10px;vertical-align:top;text-align:left;border-bottom:1px solid var(--line);line-height:1.55}
+.case-table thead{background:var(--chip)}
+.case-table th{font-weight:700}
+.case-table td:first-child{min-width:175px}
+.case-table td:first-child strong{display:block;font-size:12px;color:var(--accent-dark);margin-top:7px}
+.case-tests{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.case-test-button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:17px 19px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left}
+.case-test-button span{font-weight:700;font-size:14px}
+.case-test-button small{font-size:12px;color:var(--soft)}
+.case-test-button:hover{border-color:var(--accent)}
+.case-source{font-size:12px;color:var(--soft);line-height:1.7;margin-top:18px}
+@media(max-width:620px){.case-intro{padding:16px}.case-chapter summary{padding:15px;font-size:14px;gap:6px}.case-chapter li{font-size:13px}.case-chapter-count{font-size:10px}.case-tests{grid-template-columns:1fr}.case-table{font-size:12px}}
