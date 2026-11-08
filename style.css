@@ -33,3 +33,10 @@ html[data-theme="dark"]{--paper:#1c211d;--card:#242b25;--sidebar:#202720;--ink:#
 .quote-source{font-size:12px;color:var(--soft);margin-top:12px}
 .quote-source a{color:var(--accent-dark);text-decoration:underline;text-underline-offset:2px}
 @media(max-width:620px){.level-hints{grid-template-columns:1fr}.level-hints>div{padding:9px 13px}.quote-note{font-size:15px}}
+
+
+/* Duži odlomci iz klasika: čitljivo na telefonu, sa očuvanim stihovima. */
+.quote{white-space:pre-line}
+.quote-translation{font-size:19px;line-height:1.8;font-style:normal;letter-spacing:.006em}
+.quote-note{font-size:16px;line-height:1.75}
+@media(max-width:620px){.quote-translation{font-size:17px;line-height:1.7;padding:16px}.quote-note{font-size:15px;line-height:1.7}.quote{overflow-wrap:anywhere}}
