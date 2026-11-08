@@ -40,3 +40,22 @@ html[data-theme="dark"]{--paper:#1c211d;--card:#242b25;--sidebar:#202720;--ink:#
 .quote-translation{font-size:19px;line-height:1.8;font-style:normal;letter-spacing:.006em}
 .quote-note{font-size:16px;line-height:1.75}
 @media(max-width:620px){.quote-translation{font-size:17px;line-height:1.7;padding:16px}.quote-note{font-size:15px;line-height:1.7}.quote{overflow-wrap:anywhere}}
+
+
+/* Beleške iz sveske — vizuelno izdvojene od redovnih analiza */
+.notebook-index{display:grid;grid-template-columns:1fr;gap:22px;margin-top:20px}
+.notebook-block{margin:26px 0 24px;padding:23px 25px;border:1px solid var(--line);border-radius:17px;background:var(--card);box-shadow:0 4px 14px rgba(45,38,22,.04)}
+.notebook-block h2{font-family:Georgia,serif;font-size:29px;font-weight:500;margin:5px 0 4px}
+.notebook-block h3{font-family:Georgia,serif;font-size:27px;margin:8px 0 11px}
+.notebook-kicker{text-transform:uppercase;letter-spacing:.11em;font-size:11px;font-weight:700;color:var(--accent-dark)}
+.notebook-intro{font-size:13px;line-height:1.7;color:var(--soft);margin:0 0 13px}
+.notebook-meta{font-size:12px;color:var(--soft);margin:12px 0 19px}
+.notebook-section{border-top:1px solid var(--line);padding-top:16px;margin-top:16px}
+.notebook-section h4{font-family:Georgia,serif;font-size:19px;font-weight:600;margin:0 0 11px}
+.notebook-section ul{margin:0;padding-left:21px}
+.notebook-section li{margin:10px 0;font-size:14px;line-height:1.78;color:var(--ink)}
+.notebook-cautions{border-top:1px solid var(--line);margin-top:20px;padding-top:13px;color:var(--soft)}
+.notebook-cautions summary{cursor:pointer;font-size:13px;font-weight:700}
+.notebook-cautions ul{padding-left:20px;font-size:13px;line-height:1.65}
+.notebook-cautions li{margin:10px 0}
+@media(max-width:620px){.notebook-block{padding:18px 16px}.notebook-section li{font-size:13px}.notebook-block h2{font-size:24px}}
